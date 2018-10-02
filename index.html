@@ -1,0 +1,954 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>TP2 - Oudayan Dutta</title>
+    <!-- 
+    <link href="css/styles.css" type="text/css" media="all" rel="Stylesheet"/>
+    <link href="https://fonts.googleapis.com/css?family=Eagle+Lake|Oleo+Script" rel="stylesheet"> -->
+	<style>
+        #global {
+            float: left;
+            position: relative;
+            background: lightgrey;
+            width: 804px;
+            height: 837px;
+        }
+
+        #canevasTexte {
+            float: left;
+            width: 400px;
+            padding: 5%;
+        }
+
+        #canevasImage {
+            border: 2px solid;
+            background: #000;
+        }      
+
+        #thumb1 {
+            position: absolute;
+            border: 1px solid black;
+            left: 10px;
+            top:700px;
+        }
+
+        #thumb2 {
+            position: absolute;
+            border: 1px solid black;
+            left: 112px;
+            top:700px;
+        }
+
+        #thumb3 {
+            position: absolute;
+            border: 1px solid black;
+            left: 212px;
+            top:700px;
+        }
+
+        #thumb4 {
+            position: absolute;
+            border: 1px solid black;
+            left: 312px;
+            top:700px;
+        }
+
+        #thumb5 {
+            position: absolute;
+            border: 1px solid black;
+            left: 412px;
+            top:700px;
+        }
+
+        #thumb6 {
+            position: absolute;
+            border: 1px solid black;
+            left: 512px;
+            top:700px;
+        }
+
+        #thumb7 {
+            position: absolute;
+            border: 1px solid black;
+            left: 612px;
+            top:700px;
+        }
+
+        #thumb8 {
+            position: absolute;
+            border: 1px solid black;
+            left: 712px;
+            top:700px;
+        }
+        
+        .controls {
+            font-size: 0.8em;
+        }
+        
+        .caroussel {
+            float: left;
+            padding-top: 4px;
+        }
+        
+        .audioControls {
+            float: right;
+        }
+	</style>
+</head>
+<body>
+<div id="global">
+    <canvas id="canevasImage" width="800" height="800"></canvas>
+    <canvas id="thumb1" width="80" height="80"></canvas>
+    <canvas id="thumb2" width="80" height="80"></canvas>
+    <canvas id="thumb3" width="80" height="80"></canvas>
+    <canvas id="thumb4" width="80" height="80"></canvas>
+    <canvas id="thumb5" width="80" height="80"></canvas>
+    <canvas id="thumb6" width="80" height="80"></canvas>
+    <canvas id="thumb7" width="80" height="80"></canvas>
+    <canvas id="thumb8" width="80" height="80"></canvas>
+    <audio id="BeatsAntiqueAudio"></audio>
+    <div class="controls">
+        <div class="caroussel">
+            Caroussel :
+            <button onClick="afficherPreviousImage()">Prev</button>
+            <button onClick="afficherNextImage()">Next</button>
+            <button onClick="autoFwd()">Auto Fwd</button>
+            <button onClick="autoRev()">Auto Rev</button>
+            <button onClick="autoOff()">Auto Off</button>
+        </div>
+        <div class="audioControls">
+            Audio :
+            <button onClick="playPause()">Play/II</button>
+            <button onClick="stop()">Stop</button>
+            <label>Volume<input id="monVolume" type="range" min="0" max="100" value="50" onchange="updateVol()"></label>
+            <output id="maValeurAffichee">50</output>
+        </div>
+    </div>
+</div>
+<canvas id="canevasTexte" width="400" height="800"></canvas>
+<script>
+    var canevas=document.getElementById("canevasImage");
+    var context=canevasImage.getContext("2d");
+    var canevasT=document.getElementById("canevasTexte");
+    var contextT=canevasT.getContext("2d");
+    var canevas1=document.getElementById("thumb1");
+    var context1=canevas1.getContext("2d");
+    var canevas2=document.getElementById("thumb2");
+    var context2=canevas2.getContext("2d");
+    var canevas3=document.getElementById("thumb3");
+    var context3=canevas3.getContext("2d");
+    var canevas4=document.getElementById("thumb4");
+    var context4=canevas4.getContext("2d");
+    var canevas5=document.getElementById("thumb5");
+    var context5=canevas5.getContext("2d");
+    var canevas6=document.getElementById("thumb6");
+    var context6=canevas6.getContext("2d");
+    var canevas7=document.getElementById("thumb7");
+    var context7=canevas7.getContext("2d");
+    var canevas8=document.getElementById("thumb8");
+    var context8=canevas8.getContext("2d");
+    
+    var i=0; 
+    var echelle=.1;
+    var cadence;
+    var mouseClicked=false;
+    // Déclaration des variables audio
+    var song = document.getElementById("BeatsAntiqueAudio");
+    var audioOn = false;
+    var cursor=document.getElementById("monVolume");
+    var valAffichee=document.getElementById("maValeurAffichee");   
+    cursor.addEventListener("change", afficherValeur);
+
+    // Ouverture du tableau Beats_Antique, affichage de l'image et audio défaut
+    var requete=new XMLHttpRequest();
+    var Beats_Antique_data="Beats_Antique.txt";
+    requete.open("GET", Beats_Antique_data, true);
+    requete.send();
+    var tableau=[];
+    requete.onreadystatechange=function() {
+        if (requete.readyState==4 && requete.status==200) {
+            tableau=JSON.parse(requete.responseText);
+            var pic=new Image();
+            pic.src=tableau[0].imagePath;
+            pic.onload=function() {
+                // Afficher l'image initiale
+                context.drawImage(pic, 0, 0);
+                // Afficher le texte initial
+                contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                contextT.textAlign="center";
+                contextT.fillStyle="black";
+                contextT.textBaseline="top";
+                contextT.font="bold 50pt Times New Roman";
+                contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                contextT.font="bold 25pt Times New Roman";
+                contextT.fillText(tableau[0].album, canevasT.width/2, 200);
+                contextT.fillText(tableau[0].year, canevasT.width/2, 250);
+                contextT.font="bold 20pt Times New Roman";
+                contextT.fillText("Now playing:", canevasT.width/2, 400);
+                contextT.fillText(tableau[0].track, canevasT.width/2, 450);
+            }
+            // Loader la track audio par défaut
+            song.src=tableau[0].audioPath;
+            song.play();
+            audioOn=true;
+
+        /* Afficher Image 1 par click de vignette avec animation fade-in (alpha) */
+            var pic1=new Image();
+            pic1.src=tableau[0].imagePath;
+            pic1.onload=function() {
+                //Affichage de la vignette 1
+                context1.save();
+                context1.translate(canevas1.width/2, canevas1.height/2);
+                context1.scale(echelle, echelle);
+                context1.drawImage(pic1, 0-pic1.width/2, 0-pic1.height/2);
+                context1.restore();
+            }
+            // Quand le bouton canevas1 est cliqué, la fonction afficher1 est exécutée
+            canevas1.addEventListener("click", afficher1)
+            function afficher1(event) {
+                if (!mouseClicked) {
+                    // Switch pour s'assurer que l'animation ne reparte pas quand elle est encore en cours
+                    mouseClicked=true;
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[0].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[0].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[0].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[0].audioPath;
+                    song.currentTime=1;
+                    song.play();
+                    audioOn=true;
+                    //Nouvelle image 1
+                    var pic1=new Image();
+                    pic1.src=tableau[0].imagePath;
+                    pic1.onload=function() {
+                        // Transparence 100%
+                        var alpha=0;
+                        // Fonction pour animer le fade-in de l'image
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+                        // La fonction animer est appelée à toutes les 50 ms
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic1, 0, 0);
+                        }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+
+        /* Afficher Image 2 par click de vignette avec animation fade-in (alpha) */
+            var pic2=new Image();
+            pic2.src=tableau[1].imagePath;
+            pic2.onload=function() {
+                //Affichage de la vignette 1
+                context2.save();
+                context2.translate(canevas2.width/2, canevas2.height/2);
+                context2.scale(echelle, echelle);
+                context2.drawImage(pic2, 0-pic2.width/2, 0-pic2.height/2);
+                context2.restore();
+            }
+            canevas2.addEventListener("click", afficher2)
+
+            function afficher2(event) {
+                if (!mouseClicked) {
+                    mouseClicked=true;
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[1].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[1].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[1].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[1].audioPath;
+                    song.play();
+                    audioOn=true;
+
+                    var pic2=new Image();
+                    pic2.src=tableau[1].imagePath;
+                    pic2.onload=function() {
+                        var alpha=0;
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic2, 0, 0);
+                        }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+
+        /* Afficher Image 3 par click de vignette avec animation fade-in (alpha) */
+            var pic3=new Image();
+            pic3.src=tableau[2].imagePath;
+            pic3.onload=function() {
+                //Affichage de la vignette 1
+                context3.save();
+                context3.translate(canevas3.width/2, canevas3.height/2);
+                context3.scale(echelle, echelle);
+                context3.drawImage(pic3, 0-pic3.width/2, 0-pic3.height/2);
+                context3.restore();
+            }
+            canevas3.addEventListener("click", afficher3)
+
+            function afficher3(event) {
+                if (!mouseClicked) {
+                    mouseClicked=true;
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[2].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[2].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[2].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[2].audioPath;
+                    song.currentTime=4;
+                    song.play();
+                    audioOn=true;
+                    
+                    var pic3=new Image();
+                    pic3.src=tableau[2].imagePath;
+                    pic3.onload=function() {
+                        var alpha=0;
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic3, 0, 0);
+                        }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+
+        /* Afficher Image 4 par click de vignette avec animation fade-in (alpha) */
+            var pic4=new Image();
+            pic4.src=tableau[3].imagePath;
+            pic4.onload=function() {
+                //Affichage de la vignette 1
+                context4.save();
+                context4.translate(canevas4.width/2, canevas4.height/2);
+                context4.scale(echelle, echelle);
+                context4.drawImage(pic4, 0-pic4.width/2, 0-pic4.height/2);
+                context4.restore();
+            }
+            canevas4.addEventListener("click", afficher4)
+
+            function afficher4(event) {
+                if (!mouseClicked) {
+                    mouseClicked=true;     
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[3].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[3].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[3].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[3].audioPath;
+                    song.play();
+                    audioOn=true;
+                    
+                    var pic4=new Image();
+                    pic4.src=tableau[3].imagePath;
+                    pic4.onload=function() {
+                        var alpha=0;
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic4, 0, 0);
+                        }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+
+        /* Afficher Image 5 par click de vignette avec animation fade-in (alpha) */
+           var pic5=new Image();
+            pic5.src=tableau[4].imagePath;
+            pic5.onload=function() {
+                //Affichage de la vignette 5
+                context5.save();
+                context5.translate(canevas5.width/2, canevas5.height/2);
+                context5.scale(echelle, echelle);
+                context5.drawImage(pic5, 0-pic5.width/2, 0-pic5.height/2);
+                context5.restore();
+            }
+            canevas5.addEventListener("click", afficher5)
+
+            function afficher5(event) {
+                if (!mouseClicked) {
+                    mouseClicked=true;     
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[4].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[4].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[4].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[4].audioPath;
+                    song.play();
+                    audioOn=true;
+                    
+                    var pic5=new Image();
+                    pic5.src=tableau[4].imagePath;
+                    pic5.onload=function() {
+                        var alpha=0;
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic5, 0, 0);
+                        }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+
+        /* Afficher Image 6 par click de vignette avec animation fade-in (alpha) */
+            var pic6=new Image();
+            pic6.src=tableau[5].imagePath;
+            pic6.onload=function() {
+                //Affichage de la vignette 6
+                context6.save();
+                context6.translate(canevas6.width/2, canevas6.height/2);
+                context6.scale(echelle, echelle);
+                context6.drawImage(pic6, 0-pic6.width/2, 0-pic6.height/2);
+                context6.restore();
+            }
+            canevas6.addEventListener("click", afficher6)
+
+            function afficher6(event) {
+                if (!mouseClicked) {
+                    mouseClicked=true;
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[5].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[5].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[5].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[5].audioPath;
+                    song.currentTime=2;
+                    song.play();
+                    audioOn=true;
+                    
+                    var pic6=new Image();
+                    pic6.src=tableau[5].imagePath;
+                    pic6.onload=function() {
+                        var alpha=0;
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic6, 0, 0);
+                     }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+
+        /* Afficher Image 7 par click de vignette avec animation fade-in (alpha) */
+            var pic7=new Image();
+            pic7.src=tableau[6].imagePath;
+            pic7.onload=function() {
+                //Affichage de la vignette 7
+                context7.save();
+                context7.translate(canevas7.width/2, canevas7.height/2);
+                context7.scale(echelle, echelle);
+                context7.drawImage(pic7, 0-pic7.width/2, 0-pic7.height/2);
+                context7.restore();
+            }
+            canevas7.addEventListener("click", afficher7)
+
+            function afficher7(event) {
+                if (!mouseClicked) {
+                    mouseClicked=true;     
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[6].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[6].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[6].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[6].audioPath;
+                    song.currentTime=6;
+                    song.play();
+                    audioOn=true;
+                    
+                    var pic7=new Image();
+                    pic7.src=tableau[6].imagePath;
+                    pic7.onload=function() {
+                        var alpha=0;
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic7, 0, 0);
+                        }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+
+        /* Afficher Image 8 par click de vignette avec animation fade-in (alpha) */
+            var pic8=new Image();
+            pic8.src=tableau[7].imagePath;
+            pic8.onload=function() {
+                //Affichage de la vignette 8
+                context8.save();
+                context8.translate(canevas8.width/2, canevas8.height/2);
+                context8.scale(echelle, echelle);
+                context8.drawImage(pic8, 0-pic8.width/2, 0-pic8.height/2);
+                context8.restore();
+            }
+            canevas8.addEventListener("click", afficher8)
+
+            function afficher8(event) {
+                if (!mouseClicked) {
+                    mouseClicked=true;
+                    // Afficher le texte
+                    contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+                    contextT.textAlign="center";
+                    contextT.fillStyle="black";
+                    contextT.textBaseline="top";
+                    contextT.font="bold 50pt Times New Roman";
+                    contextT.fillText("Beats Antique", canevasT.width/2, 50);
+                    contextT.font="bold 25pt Times New Roman";
+                    contextT.fillText(tableau[7].album, canevasT.width/2, 200);
+                    contextT.fillText(tableau[7].year, canevasT.width/2, 250);
+                    contextT.font="bold 20pt Times New Roman";
+                    contextT.fillText("Now playing:", canevasT.width/2, 400);
+                    contextT.fillText(tableau[7].track, canevasT.width/2, 450);
+                    // Arrêter la track audio qui joue
+                    song.currentTime=0;
+                    song.pause();
+                    audioOn=false;
+                    // Loader et jouer la nouvelle track audio
+                    song.src=tableau[7].audioPath;
+                    song.play();
+                    audioOn=true;
+                    
+                    var pic8=new Image();
+                    pic8.src=tableau[7].imagePath;
+                    pic8.onload=function() {
+                        var alpha=0;
+                        function animer() {
+                            context.clearRect(0, 0, canevas.width, canevas.height);
+                            displayImageFadeIn();
+                            increment();
+                        }
+
+                        var cadence=setInterval(animer, 50);
+
+                        function displayImageFadeIn() {
+                            context.globalAlpha=alpha;
+                            context.drawImage(pic8, 0, 0);
+                        }
+
+                        function increment() {
+                            alpha+=0.05;
+                            if (alpha>=1) {
+                                alpha=1;
+                                clearInterval(cadence, 0);
+                                mouseClicked=false;
+                            }
+                        }            
+                    }
+                }
+            }
+        }
+    }
+
+
+    // Fonction pour afficher la prochaine image avec animation slide-in par un des 4 coins, et départ de la prochaine track audio
+    function afficherNextImage() {
+        i+=1;
+        if (i>=tableau.length) {
+            i=0;
+        }
+        // Afficher le texte
+        contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+        contextT.textAlign="center";
+        contextT.fillStyle="black";
+        contextT.textBaseline="top";
+        contextT.font="bold 50pt Times New Roman";
+        contextT.fillText("Beats Antique", canevasT.width/2, 50);
+        contextT.font="bold 25pt Times New Roman";
+        contextT.fillText(tableau[i].album, canevasT.width/2, 200);
+        contextT.fillText(tableau[i].year, canevasT.width/2, 250);
+        contextT.font="bold 20pt Times New Roman";
+        contextT.fillText("Now playing:", canevasT.width/2, 400);
+        contextT.fillText(tableau[i].track, canevasT.width/2, 450);
+        // Arrêter la track audio qui joue
+        song.currentTime=0;
+        song.pause();
+        audioOn=false;
+        // Loader et jouer la prochaine track audio
+        song.src=tableau[i].audioPath;
+        if (i==0) { song.currentTime=1; }
+        if (i==2) { song.currentTime=4; }
+        if (i==5) { song.currentTime=2; }
+        if (i==6) { song.currentTime=6; }
+        song.play();
+        audioOn=true;
+
+
+        var pic=new Image();
+        pic.src=tableau[i].imagePath;
+        pic.onload=function() {
+            if (i%4==0) {
+                x=canevas.width;
+                y=canevas.height;
+            }
+            else if (i%4==1) {
+                x=0-canevas.width;
+                y=0-canevas.height;                
+            }
+            else if (i%4==2) {
+                x=canevas.width;
+                y=0-canevas.height;                
+            }
+            else {
+                x=0-canevas.width;
+                y=canevas.height;                
+            }
+            
+             function animate() {
+                context.clearRect(0, 0, canevas.width, canevas.height);
+                context.drawImage(pic, x, y);
+                increment();
+            }
+            
+            var cadence=setInterval(animate, 50);
+
+            function increment() {
+                if (i%4==0) {
+                    x-=canevas.width/10;
+                    y-=canevas.height/10;
+                    if (x<0) {
+                        x=0;
+                        y=0;
+                        clearInterval(cadence, 0);
+                    }
+                }
+                else if (i%4==1) {
+                    x+=canevas.width/10;
+                    y+=canevas.height/10;
+                    if (x>0) {
+                        x=0;
+                        y=0;
+                        clearInterval(cadence, 0);
+                    }
+                }
+                else if (i%4==2) {
+                    x-=canevas.width/10;
+                    y+=canevas.height/10;
+                    if (x<0) {
+                        x=0;
+                        y=0;
+                        clearInterval(cadence, 0);
+                    }
+                }
+                else {
+                    x+=canevas.width/10;
+                    y-=canevas.height/10;
+                    if (x>0) {
+                        x=0;
+                        y=0;
+                        clearInterval(cadence, 0);
+                    }
+                }
+            }
+        }
+    }
+
+    // Fonction pour afficher l'image précédente avec animation de zoom-in, et départ de la prochaine track audio
+    function afficherPreviousImage() {
+        i-=1;
+        if (i<0) {
+            i=tableau.length-1;
+        }
+        // Afficher le texte
+        contextT.clearRect(0, 0, canevasT.width, canevasT.height);
+        contextT.textAlign="center";
+        contextT.fillStyle="black";
+        contextT.textBaseline="top";
+        contextT.font="bold 50pt Times New Roman";
+        contextT.fillText("Beats Antique", canevasT.width/2, 50);
+        contextT.font="bold 25pt Times New Roman";
+        contextT.fillText(tableau[i].album, canevasT.width/2, 200);
+        contextT.fillText(tableau[i].year, canevasT.width/2, 250);
+        contextT.font="bold 20pt Times New Roman";
+        contextT.fillText("Now playing:", canevasT.width/2, 400);
+        contextT.fillText(tableau[i].track, canevasT.width/2, 450);
+        // Arrêter la track audio qui joue
+        song.currentTime=0;
+        song.pause();
+        audioOn=false;
+        // Loader et jouer la track audio précédente
+        song.src=tableau[i].audioPath;
+        if (i==0) { song.currentTime=1; }
+        if (i==2) { song.currentTime=4; }
+        if (i==5) { song.currentTime=2; }
+        if (i==6) { song.currentTime=6; }
+        song.play();
+        audioOn=true;
+
+        var pic=new Image();
+        pic.src=tableau[i].imagePath;
+        pic.onload=function() {
+            var zoom=0.1;
+            function animateZoom() {
+                context.clearRect(0, 0, canevas.width, canevas.height);
+                displayImageZoom();
+                incrementZoom();
+            }
+        
+            var cadence=setInterval(animateZoom, 50);
+
+            function displayImageZoom() {
+                context.save();
+                context.translate(canevas.width/2, canevas.height/2);
+                context.scale(zoom, zoom);
+                context.drawImage(pic, 0-pic.width/2, 0-pic.height/2);
+                context.restore();
+            }
+
+            function incrementZoom() {
+                zoom+=0.1;
+                if (zoom>1) {
+                    zoom=1;
+                    clearInterval(cadence, 0);
+                }
+            }
+        }
+    }
+
+    // Fonction pour faire avancer l'image et track audio à toutes les 5 secondes dans le caroussel
+    function autoFwd() {
+        clearInterval(cadence);
+        cadence=setInterval(afficherNextImage, 5000);
+    }
+    
+    // Fonction pour faire reculer l'image et track audio à toutes les 5 secondes dans le caroussel
+    function autoRev() {
+        clearInterval(cadence);
+        cadence=setInterval(afficherPreviousImage, 5000);
+    }
+
+    // Fonction pour arrêter le caroussel automatique
+    function autoOff() {
+        clearInterval(cadence);
+    }    
+
+    // Fonction audio pour pauser ou jouer l'audio avec contrôle de volume
+    function playPause() {
+        if (!audioOn) {
+            song.volume=cursor.value/100;
+            song.play();
+            audioOn=true;
+        }
+        else {
+            song.pause();
+            audioOn=false;
+        }
+    }
+
+    // Fonction pour arrêter l'audio
+    function stop() {
+        song.currentTime=0;
+        song.pause();
+        audioOn=false;
+    }
+    
+    function updateVol() {
+        song.volume=cursor.value/100;
+        console.log(song.volume);
+    }
+    
+    function afficherValeur(event) {
+        valAffichee.value=event.target.value;
+    }
+ 
+</script>
+</body>
+</html>

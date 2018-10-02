@@ -1,0 +1,58 @@
+[
+	{
+		"album": "Tribal Derivations",
+        "year": "2007",
+        "track": "The Lantern",
+		"imagePath": "images/1.jpg",
+        "audioPath": "audio/02 - Beats Antique - The Lantern.mp3"
+	},
+	{
+		"album": "Collide",
+        "year": "2008",
+        "track": "Milieu",
+		"imagePath": "images/2.jpg",
+        "audioPath": "audio/10 - Beats Antique - Milieu.mp3"
+	},
+	{
+		"album": "Contraption (EP Vol. I)",
+        "year": "2009",
+        "track": "Oriental Uno",
+		"imagePath": "images/3.jpg",
+        "audioPath": "audio/01 - Beats Antique - Oriental Uno (Feat. Fanfara Kalashnikov).mp3"
+	},
+	{
+		"album": "Blind Threshold",
+        "year": "2010",
+        "track": "Daze",
+		"imagePath": "images/4.jpg",
+        "audioPath": "audio/06 - Beats Antique - Daze.mp3"
+	},
+	{
+		"album": "Elektrafone",
+        "year": "2011",
+        "track": "Alleyway",
+		"imagePath": "images/5.jpg",
+        "audioPath": "audio/09 - Beats Antique - Alleyway.mp3"
+	},
+	{
+		"album": "Contraption V. II",
+        "year": "2012",
+        "track": "Skeleton Key",
+		"imagePath": "images/6.jpg",
+        "audioPath": "audio/02 - Beats Antique - Skeleton Key.mp3"
+	},
+	{
+		"album": "A Thousand Faces Act I",
+        "year": "2013",
+        "track": "Veil Of Tears",
+		"imagePath": "images/7.jpg",
+        "audioPath": "audio/10 - Beats Antique - Veil Of Tears.mp3"
+	},
+	{
+		"album": "A Thousand Faces Act II",
+        "year": "2014",
+        "track": "The Rift (Feat. Alam Khan)",
+		"imagePath": "images/8.jpg",
+        "audioPath": "audio/04 - Beats Antique - The Rift (Feat. Alam Khan).mp3"
+	}
+]
